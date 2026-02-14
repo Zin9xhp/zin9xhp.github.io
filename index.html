@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quà tặng Vợ Yêu</title>
     <style>
         body, html {
@@ -13,8 +13,6 @@
             background-color: #000;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* Ngăn chặn thao tác vuốt cuộn ngoài ý muốn trên điện thoại */
-            touch-action: none; 
         }
         canvas {
             display: block;
@@ -26,13 +24,13 @@
             width: 100%;
             height: 100%;
             background-color: #000;
-            color: #ff69b4;
+            color: #ff69b4; /* Chữ màu hồng */
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 999;
             cursor: pointer;
-            font-size: clamp(18px, 5vw, 28px); /* Responsive font cho nút bấm */
+            font-size: 24px;
             font-weight: bold;
             text-align: center;
             padding: 20px;
@@ -58,39 +56,55 @@
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
     let width, height;
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
 
     // ---------------------------------------------------
-    // 1. HIỆU ỨNG MƯA TRÁI TIM 
+    // 1. HIỆU ỨNG MƯA TRÁI TIM RƠI CHẬM
     // ---------------------------------------------------
     const heartSymbols = ['❤', '💖', '💕', '💗', '💓'];
-    const heartSize = 20;
+    const heartSize = 20; // Kích thước trái tim rơi
     let columns;
     let drops = [];
 
     function initMatrix() {
-        columns = Math.floor(width / heartSize) + 1;
+        columns = Math.floor(width / heartSize);
         drops = [];
         for (let x = 0; x < columns; x++) {
+            // Khởi tạo vị trí Y ngẫu nhiên cho các cột
             drops[x] = Math.random() * height; 
         }
     }
+    initMatrix();
 
     function drawMatrix() {
+        // Lớp mờ đen để tạo hiệu ứng vệt (trail) cho trái tim
         ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; 
         ctx.fillRect(0, 0, width, height);
 
+        // Màu sắc trái tim
         ctx.fillStyle = '#ff3366'; 
         ctx.font = heartSize + 'px Arial';
         ctx.textAlign = 'center';
 
         for (let i = 0; i < drops.length; i++) {
+            // Chọn ngẫu nhiên một icon trái tim
             const text = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
-            ctx.fillText(text, i * heartSize + heartSize / 2, drops[i]);
+            
+            // Vẽ trái tim
+            ctx.fillText(text, i * heartSize + heartSize/2, drops[i]);
 
+            // Nếu trái tim rơi vượt quá màn hình thì reset lại lên đầu
             if (drops[i] > height && Math.random() > 0.975) {
-                drops[i] = -heartSize; 
+                drops[i] = -heartSize; // Bắt đầu lại từ ngay trên mép màn hình
             }
-            drops[i] += 1; // Tốc độ rơi
+            
+            // TỐC ĐỘ RƠI: Số càng nhỏ rơi càng chậm (ví dụ: 0.8, 1, 1.5)
+            drops[i] += 1; 
         }
     }
 
@@ -98,15 +112,16 @@
     // 2. HIỆU ỨNG HẠT (PARTICLES) BIẾN HÌNH CHỮ
     // ---------------------------------------------------
     let particles = [];
+    
+    // NỘI DUNG LỜI CHÚC (Thay đổi tại đây)
     const texts = [
-        "Chúc em\nnăm mới\nhạnh phúc",
-        "2026 này\nthật rực rỡ nhé",
-        "Năm mới này\nvẫn luôn\ncạnh anh",
+        "Chúc em\n mùa valentine\nthật vui vẻ",
+        "Gửi lời chúc ấm áp nhất đến em \ntrong ngày đặc biệt này.\nChúc em luôn rạng rỡ nhé!",
+        
         "Luôn là cô\ngái xinh đẹp\nnhất",
-        "Anh yêu em\nnhất trên đời"
+        
     ];
     let textIndex = 0;
-    let textTimeout;
 
     class Particle {
         constructor(x, y) {
@@ -118,7 +133,7 @@
             this.vy = 0;
             this.friction = 0.85; 
             this.ease = 0.03 + Math.random() * 0.04;
-            this.size = Math.random() * 1.5 + 1; 
+            this.size = Math.random() * 1.5 + 1; // Kích thước hạt tạo chữ
         }
 
         update() {
@@ -133,7 +148,7 @@
         }
 
         draw() {
-            ctx.fillStyle = '#FFFFFF'; 
+            ctx.fillStyle = '#FFFFFF'; // Hạt tạo chữ màu trắng cho nổi bật
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
             ctx.fill();
@@ -147,13 +162,7 @@
         const octx = offscreen.getContext('2d', { willReadFrequently: true });
 
         octx.fillStyle = 'white';
-        
-        // CÔNG THỨC RESPONSIVE FONT SIZE
-        // Dựa vào chiều rộng màn hình, giới hạn nhỏ nhất 30px, lớn nhất 80px
-        let fontSize = Math.floor(width * 0.12);
-        if (fontSize > 80) fontSize = 80;
-        if (fontSize < 30) fontSize = 30;
-
+        let fontSize = width < 600 ? 40 : 80;
         octx.font = `bold ${fontSize}px 'Segoe UI', Arial`;
         octx.textAlign = 'center';
         octx.textBaseline = 'middle';
@@ -168,9 +177,7 @@
 
         const data = octx.getImageData(0, 0, width, height).data;
         const pixels = [];
-        
-        // Điều chỉnh mật độ hạt dựa trên kích thước màn hình để tối ưu hiệu năng
-        const gap = width < 600 ? 3 : 4; 
+        const gap = 4;
 
         for (let y = 0; y < height; y += gap) {
             for (let x = 0; x < width; x += gap) {
@@ -183,9 +190,7 @@
         return pixels;
     }
 
-    function changeText(forceRedraw = false) {
-        clearTimeout(textTimeout);
-        
+    function changeText() {
         const pixels = getPixels(texts[textIndex]);
         pixels.sort(() => Math.random() - 0.5); 
 
@@ -201,58 +206,43 @@
         for (let i = 0; i < particles.length; i++) {
             particles[i].targetX = pixels[i].x;
             particles[i].targetY = pixels[i].y;
-            
-            // Nếu xoay màn hình, cho các hạt bay lại về vị trí mới nhanh hơn một chút
-            if (forceRedraw) {
-                particles[i].x = width / 2;
-                particles[i].y = height / 2;
-            }
         }
 
         textIndex = (textIndex + 1) % texts.length;
-        textTimeout = setTimeout(() => changeText(false), 4500); 
+        setTimeout(changeText, 4500); // Đổi chữ sau mỗi 4.5 giây
     }
 
     function animate() {
         drawMatrix();
+
         particles.forEach(p => {
             p.update();
             p.draw();
         });
+
         requestAnimationFrame(animate);
     }
 
     // ---------------------------------------------------
-    // 3. XỬ LÝ SỰ KIỆN RESIZE (XOAY/GẬP MÀN HÌNH)
-    // ---------------------------------------------------
-    let resizeTimer;
-    function handleResize() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            initMatrix(); // Tính toán lại số cột trái tim
-            
-            // Nếu đã qua màn hình chờ, vẽ lại chữ ngay lập tức để căn giữa
-            if (startScreen.style.display === 'none') {
-                textIndex = (textIndex - 1 + texts.length) % texts.length;
-                changeText(true); 
-            }
-        }, 200); // Chờ 200ms sau khi dừng kéo thả cửa sổ mới tính toán để chống giật lag
-    }
-    
-    window.addEventListener('resize', handleResize);
-    
-    // Khởi tạo kích thước ban đầu
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-    initMatrix();
-
-    // ---------------------------------------------------
-    // 4. BẮT ĐẦU KHI CHẠM
+    // 3. XỬ LÝ SỰ KIỆN CHẠM MÀN HÌNH ĐỂ BẮT ĐẦU
     // ---------------------------------------------------
     const startScreen = document.getElementById('startScreen');
     const bgMusic = document.getElementById('bgMusic');
 
-    startScreen.addEventListener('
+    startScreen.addEventListener('click', function() {
+        // Ẩn màn hình chờ
+        startScreen.style.display = 'none';
+        
+        // Phát nhạc
+        bgMusic.play().catch(error => {
+            console.log("Trình duyệt chặn phát nhạc:", error);
+        });
 
+        // Bắt đầu hiệu ứng sau 0.5s
+        setTimeout(changeText, 500); 
+        animate();
+    });
+
+</script>
+</body>
+</html>
