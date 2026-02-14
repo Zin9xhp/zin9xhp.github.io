@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quà tặng Vợ Yêu</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            color: #ff69b4; /* Chữ màu hồng */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            cursor: pointer;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+<audio id="bgMusic" loop>
+    <source src="Falling You (Chiếc Bật Lửa Và Váy Công Chúa Ost).mp3" type="audio/mpeg">
+</audio>
+
+<div id="startScreen">
+    💌 Touch me 💌
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    let width, height;
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // ---------------------------------------------------
+    // 1. HIỆU ỨNG MƯA TRÁI TIM RƠI CHẬM
+    // ---------------------------------------------------
+    const heartSymbols = ['❤', '💖', '💕', '💗', '💓'];
+    const heartSize = 20; // Kích thước trái tim rơi
+    let columns;
+    let drops = [];
+
+    function initMatrix() {
+        columns = Math.floor(width / heartSize);
+        drops = [];
+        for (let x = 0; x < columns; x++) {
+            // Khởi tạo vị trí Y ngẫu nhiên cho các cột
+            drops[x] = Math.random() * height; 
+        }
+    }
+    initMatrix();
+
+    function drawMatrix() {
+        // Lớp mờ đen để tạo hiệu ứng vệt (trail) cho trái tim
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; 
+        ctx.fillRect(0, 0, width, height);
+
+        // Màu sắc trái tim
+        ctx.fillStyle = '#ff3366'; 
+        ctx.font = heartSize + 'px Arial';
+        ctx.textAlign = 'center';
+
+        for (let i = 0; i < drops.length; i++) {
+            // Chọn ngẫu nhiên một icon trái tim
+            const text = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+            
+            // Vẽ trái tim
+            ctx.fillText(text, i * heartSize + heartSize/2, drops[i]);
+
+            // Nếu trái tim rơi vượt quá màn hình thì reset lại lên đầu
+            if (drops[i] > height && Math.random() > 0.975) {
+                drops[i] = -heartSize; // Bắt đầu lại từ ngay trên mép màn hình
+            }
+            
+            // TỐC ĐỘ RƠI: Số càng nhỏ rơi càng chậm (ví dụ: 0.8, 1, 1.5)
+            drops[i] += 1; 
+        }
+    }
+
+    // ---------------------------------------------------
+    // 2. HIỆU ỨNG HẠT (PARTICLES) BIẾN HÌNH CHỮ
+    // ---------------------------------------------------
+    let particles = [];
+    
+    // NỘI DUNG LỜI CHÚC (Thay đổi tại đây)
+    const texts = [
+        "Chúc em\n mùa valentine\nthật vui vẻ",
+        "Gửi lời chúc ấm áp nhất đến em \ntrong ngày đặc biệt này.\nChúc em luôn rạng rỡ nhé!",
+        
+        "Luôn là cô\ngái xinh đẹp\nnhất",
+        
+    ];
+    let textIndex = 0;
+
+    class Particle {
+        constructor(x, y) {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.targetX = x;
+            this.targetY = y;
+            this.vx = 0;
+            this.vy = 0;
+            this.friction = 0.85; 
+            this.ease = 0.03 + Math.random() * 0.04;
+            this.size = Math.random() * 1.5 + 1; // Kích thước hạt tạo chữ
+        }
+
+        update() {
+            const dx = this.targetX - this.x;
+            const dy = this.targetY - this.y;
+            this.vx += dx * this.ease;
+            this.vy += dy * this.ease;
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+            this.x += this.vx;
+            this.y += this.vy;
+        }
+
+        draw() {
+            ctx.fillStyle = '#FFFFFF'; // Hạt tạo chữ màu trắng cho nổi bật
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function getPixels(text) {
+        const offscreen = document.createElement('canvas');
+        offscreen.width = width;
+        offscreen.height = height;
+        const octx = offscreen.getContext('2d', { willReadFrequently: true });
+
+        octx.fillStyle = 'white';
+        let fontSize = width < 600 ? 40 : 80;
+        octx.font = `bold ${fontSize}px 'Segoe UI', Arial`;
+        octx.textAlign = 'center';
+        octx.textBaseline = 'middle';
+
+        const lines = text.split('\n');
+        const lineHeight = fontSize * 1.2;
+        let startY = (height - (lines.length - 1) * lineHeight) / 2;
+
+        lines.forEach((line, index) => {
+            octx.fillText(line, width / 2, startY + (index * lineHeight));
+        });
+
+        const data = octx.getImageData(0, 0, width, height).data;
+        const pixels = [];
+        const gap = 4;
+
+        for (let y = 0; y < height; y += gap) {
+            for (let x = 0; x < width; x += gap) {
+                const alpha = data[(y * width + x) * 4 + 3];
+                if (alpha > 128) {
+                    pixels.push({ x, y });
+                }
+            }
+        }
+        return pixels;
+    }
+
+    function changeText() {
+        const pixels = getPixels(texts[textIndex]);
+        pixels.sort(() => Math.random() - 0.5); 
+
+        if (particles.length < pixels.length) {
+            const diff = pixels.length - particles.length;
+            for (let i = 0; i < diff; i++) {
+                particles.push(new Particle(width / 2, height / 2));
+            }
+        } else if (particles.length > pixels.length) {
+            particles.splice(pixels.length);
+        }
+
+        for (let i = 0; i < particles.length; i++) {
+            particles[i].targetX = pixels[i].x;
+            particles[i].targetY = pixels[i].y;
+        }
+
+        textIndex = (textIndex + 1) % texts.length;
+        setTimeout(changeText, 4500); // Đổi chữ sau mỗi 4.5 giây
+    }
+
+    function animate() {
+        drawMatrix();
+
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    // ---------------------------------------------------
+    // 3. XỬ LÝ SỰ KIỆN CHẠM MÀN HÌNH ĐỂ BẮT ĐẦU
+    // ---------------------------------------------------
+    const startScreen = document.getElementById('startScreen');
+    const bgMusic = document.getElementById('bgMusic');
+
+    startScreen.addEventListener('click', function() {
+        // Ẩn màn hình chờ
+        startScreen.style.display = 'none';
+        
+        // Phát nhạc
+        bgMusic.play().catch(error => {
+            console.log("Trình duyệt chặn phát nhạc:", error);
+        });
+
+        // Bắt đầu hiệu ứng sau 0.5s
+        setTimeout(changeText, 500); 
+        animate();
+    });
+
+</script>
+</body>
+</html>
