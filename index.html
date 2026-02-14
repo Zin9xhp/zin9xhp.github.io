@@ -150,9 +150,9 @@
         
         // CÔNG THỨC RESPONSIVE FONT SIZE
         // Dựa vào chiều rộng màn hình, giới hạn nhỏ nhất 30px, lớn nhất 80px
-        let fontSize = Math.floor(width * 0.12);
+        let fontSize = Math.floor(width * 0.1);
         if (fontSize > 80) fontSize = 80;
-        if (fontSize < 30) fontSize = 30;
+        if (fontSize < 30) fontSize = 28;
 
         octx.font = `bold ${fontSize}px 'Segoe UI', Arial`;
         octx.textAlign = 'center';
@@ -268,4 +268,5 @@
 </script>
 </body>
 </html>
+
 
